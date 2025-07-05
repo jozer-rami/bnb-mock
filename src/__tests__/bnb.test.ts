@@ -24,7 +24,7 @@ describe('BNB API Endpoints', () => {
 
       expect(response.body).toHaveProperty('access_token');
       expect(response.body).toHaveProperty('token_type', 'bearer');
-      expect(response.body).toHaveProperty('expires_in', 3600);
+      expect(response.body).toHaveProperty('expires_in', 86400);
       expect(typeof response.body.access_token).toBe('string');
       expect(response.body.access_token.length).toBeGreaterThan(0);
 
@@ -114,6 +114,35 @@ describe('BNB API Endpoints', () => {
       });
     });
 
+    it('should return SUCCESS for P2P reference IDs', async () => {
+      const response = await request(app)
+        .get('/DirectDebit/GetTransactionOutgoing/P2P123456')
+        .set('Authorization', `Bearer ${validToken}`)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        referenceId: 'P2P123456',
+        status: 'SUCCESS',
+        amount: 100.0,
+        payerAlias: 'P2P-USER-123456',
+      });
+      expect(response.body).toHaveProperty('timestamp');
+    });
+
+    it('should return SUCCESS for different P2P reference IDs', async () => {
+      const response = await request(app)
+        .get('/DirectDebit/GetTransactionOutgoing/P2PABC')
+        .set('Authorization', `Bearer ${validToken}`)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        referenceId: 'P2PABC',
+        status: 'SUCCESS',
+        amount: 100.0,
+        payerAlias: 'P2P-USER-ABC',
+      });
+    });
+
     it('should return 401 for missing Authorization header', async () => {
       const response = await request(app)
         .get('/DirectDebit/GetTransactionOutgoing/REF123')
@@ -170,8 +199,8 @@ describe('BNB API Endpoints', () => {
         .set('Authorization', `Bearer ${validToken}`)
         .expect(404);
 
-      // Empty reference ID will result in empty object due to Express routing
-      expect(response.body).toHaveProperty('error');
+      // Express returns an empty object for unmatched routes
+      expect(response.body).toEqual({});
     });
   });
 

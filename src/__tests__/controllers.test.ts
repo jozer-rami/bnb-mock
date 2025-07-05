@@ -33,7 +33,7 @@ describe('BNB Controllers', () => {
         expect.objectContaining({
           access_token: expect.any(String),
           token_type: 'bearer',
-          expires_in: 3600,
+          expires_in: 86400,
         })
       );
     });
@@ -117,6 +117,25 @@ describe('BNB Controllers', () => {
         referenceId: 'UNKNOWN123',
         status: 'NOT_FOUND',
       });
+    });
+
+    it('should return SUCCESS for P2P reference ID', () => {
+      const req = createMockRequest({
+        params: { referenceId: 'P2P123456' }
+      }) as Request;
+      const res = createMockResponse() as Response;
+
+      getTransactionOutgoing(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          referenceId: 'P2P123456',
+          status: 'SUCCESS',
+          amount: 100.0,
+          payerAlias: 'P2P-USER-123456',
+          timestamp: expect.any(String),
+        })
+      );
     });
   });
 

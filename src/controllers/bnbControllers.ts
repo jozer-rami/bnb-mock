@@ -61,7 +61,7 @@ export const getAuthToken = (req: Request, res: Response): void => {
   
   // Skipping real client validation – this is a mock
   const token = uuid();
-  const expiresIn = 3600; // 1 hour
+  const expiresIn = 86400; // 1 day (24 hours)
   TOKENS.set(token, { token, expiresAt: Date.now() + expiresIn * 1000 });
   
   res.json({
@@ -74,12 +74,27 @@ export const getAuthToken = (req: Request, res: Response): void => {
 // Get transaction status endpoint
 export const getTransactionOutgoing = (req: Request, res: Response): void => {
   const { referenceId } = req.params;
-  const payment = PAYMENTS[referenceId];
   
-  if (!payment) {
-    res.status(404).json({ referenceId, status: "NOT_FOUND" });
+  // Testing phase logic: P2P references return SUCCESS, others return NOT_FOUND
+  if (referenceId.startsWith('P2P')) {
+    const successPayment: Payment = {
+      referenceId: referenceId,
+      status: "SUCCESS",
+      amount: 100.0, // Default amount for P2P transactions
+      payerAlias: "P2P-USER-" + referenceId.slice(3), // Generate payer alias from reference
+      timestamp: new Date().toISOString(),
+    };
+    res.json(successPayment);
     return;
   }
   
-  res.json(payment);
+  // For non-P2P references, check if it exists in hardcoded data first
+  const payment = PAYMENTS[referenceId];
+  if (payment) {
+    res.json(payment);
+    return;
+  }
+  
+  // If not found in hardcoded data, return NOT_FOUND
+  res.status(404).json({ referenceId, status: "NOT_FOUND" });
 }; 
